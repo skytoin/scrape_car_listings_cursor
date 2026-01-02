@@ -1,4 +1,4 @@
-This file provides comprehensive guidance to Cursor Code when working with Python code in this repository.
+This file provides comprehensive guidance to claude Code when working with Python code in this repository.
 Core Development Philosophy
 KISS (Keep It Simple, Stupid)
 Simplicity should be a key goal in design. Choose straightforward solutions over complex ones whenever possible. Simple solutions are easier to understand, maintain, and debug.
@@ -348,7 +348,7 @@ Branch Strategy
 •	refactor/* - Code refactoring
 •	test/* - Test additions or fixes
 Commit Message Format
-Never include cursor code, or written by cursor code in commit messages
+Never include claude code, or written by claude code in commit messages
 <type>(<scope>): <subject>
 
 <body>
@@ -565,7 +565,7 @@ Python Best Practices
 ⚠️ Important Notes
 •	NEVER ASSUME OR GUESS - When in doubt, ask for clarification
 •	Always verify file paths and module names before use
-•	Keep CURSOR.md updated when adding new patterns or dependencies
+•	Keep claude.md updated when adding new patterns or dependencies
 •	Test your code - No feature is complete without tests
 •	Document your decisions - Future developers (including yourself) will thank you
 🔍 Search Command Requirements

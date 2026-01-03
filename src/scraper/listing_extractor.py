@@ -295,40 +295,64 @@ class ListingExtractor:
 
     async def _extract_images(self, page: Page, listing: CarListing) -> None:
         """
-        Extract all image URLs from the listing.
+        Extract car gallery images only (excludes ads, dealer photos, similar cars).
 
         Args:
             page: Playwright page
             listing: CarListing to add images to
         """
-        # Common image selectors
-        image_selectors = [
-            'img[data-testid="photo"]',
-            ".vehicle-image img",
-            '[class*="gallery"] img',
-            '[class*="photo"] img',
-            "picture img",
-        ]
-
         seen_urls = set()
         position = 0
 
-        for selector in image_selectors:
-            images = await page.query_selector_all(selector)
-            for img in images:
-                # Get src or data-src (for lazy loading)
-                src = await img.get_attribute("src")
-                data_src = await img.get_attribute("data-src")
-                url = src or data_src
+        # Get ALL images from the page
+        all_images = await page.query_selector_all("img")
 
-                if url and url.startswith("http") and url not in seen_urls:
-                    seen_urls.add(url)
-                    is_primary = position == 0
-                    listing.add_image(url=url, is_primary=is_primary)
-                    position += 1
+        # Track when we hit non-gallery images (like dealership-gallery)
+        gallery_ended = False
 
-                if position >= 20:  # Limit to 20 images
-                    break
+        for img in all_images:
+            # Get src and data-src
+            src = await img.get_attribute("src")
+            data_src = await img.get_attribute("data-src")
+            url = src or data_src
 
-            if position >= 20:
+            if not url or "cstatic-images.com" not in url:
+                continue
+
+            # Check parent class to identify section
+            parent_class = await page.evaluate("(img) => img.parentElement?.className || ''", img)
+
+            # RULE 1: Skip dealership photos
+            if "dealership" in parent_class.lower():
+                gallery_ended = True
+                continue
+
+            # RULE 2: Skip ads
+            if "/ad-creative/" in url or "/ads/" in url:
+                continue
+
+            # RULE 3: Skip dealer media
+            if "/dealer_media/" in url:
+                continue
+
+            # RULE 4: Only take high-quality images (xxlarge or xlarge)
+            if "/xxlarge/" not in url and "/xlarge/" not in url:
+                continue
+
+            # RULE 5: Stop when we've found gallery images and then hit dealership section
+            if gallery_ended and position > 0:
+                break
+
+            # RULE 6: Avoid duplicates
+            if url in seen_urls:
+                continue
+
+            # This is a valid gallery image
+            seen_urls.add(url)
+            is_primary = position == 0
+            listing.add_image(url=url, is_primary=is_primary)
+            position += 1
+
+            # Safety limit
+            if position >= 50:
                 break
